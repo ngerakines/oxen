@@ -20,6 +20,8 @@
 ** THE SOFTWARE.
 */
 
+#include <signal.h>
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -29,8 +31,22 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/tokenizer.hpp>
 
+#include "DirectoryWatcher.hpp"
+#include "Config.hpp"
+
 using namespace std;
 namespace po = boost::program_options;
+
+using namespace oxen;
+
+volatile bool running;
+
+void sighandler(int signum) {
+	std::cout << "Received signal " << signum << std::endl;
+	if (signum == SIGINT) {
+		running = false;
+	}
+}
 
 int main(int argc, char **argv, char **ppenv) {
 	po::options_description desc("Allowed options");
@@ -43,5 +59,22 @@ int main(int argc, char **argv, char **ppenv) {
 	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
 
+	Config config;
+
+	if (vm.count("directory")) {
+		config.directory(vm["directory"].as<string>());
+	}
+
+	running = true;
+	signal(SIGINT, sighandler);
+
+	TorrentIndex ti;
+	DirectoryWatcher dw(&config, &ti);
+
+	while (running) {
+		boost::this_thread::sleep(boost::posix_time::seconds(5));	
+	}
+
 	return 0;
 }
+
