@@ -32,3 +32,40 @@
 <hydri> that makes it easier to start up again
 <hydri> ngerakines: are you doing this with a single torrent at a time?
 <ngerakines> if disk/ram is limited, likely yes
+<ngerakines> would doing this with multiple torrents be more difficult?
+<hydri> ngerakines: well, the resource allocation might be harder to do in an optimal way
+<ngerakines> yeah
+<hydri> if you have multiple, you would most likely want to not allocate your piece ranges sequentially, but random pieces as well
+<hydri> but it sounds like it wouldn't be too hard
+<ngerakines> so I suppose the next step is hooking into the libtorrent session and torrent info bits and creating a custom storage_interface
+<hydri> ngerakines: you can easily control which pieces are downloaded via the piece priority, and if all you need to do is to chop up the torrent into equal size files (that you can drop), it might be a lot easier to use torrent_info::remap_files()
+<ngerakines> hydri: that's great, I'll read up more on piece priority and the remap_files logic
+<ngerakines> so with piece_priority, I'd iterate over every piece marking as 0 (not downloaded) and just check the ones that are to be downloaded? Is there any way to track per-piece ratios then?
+<ngerakines> There isn't much documentation on the file_storage object. From the tests, it looks add_file is called with a file name and then a piece size. Is it safe to assume that the total number of files have to be added that represent the total number of pieces?
+<hydri> ngerakines: there's a call to set the priority of all pieces.. torrent_handle::prioritize_pieces()
+<ngerakines> hydri: yeah, got that
+<hydri> ngerakines: hm.. there's no way I can' think of to directly know how many times a specific piece has been uploaded.. especially since one piece is typically larger than one block (i.e. request)
+<hydri> ngerakines: however, a possibly better metric would be the availability of that piece in the swarm, which you can query
+<ngerakines> hydri: hmm, sounds reasonable. Will have to research as to how to keep that data up to date.
+<hydri> ngerakines: the second argument to add_file() is not the piece size, it's the file size.. when you remap files, you can set any file size you want, the point is probably to not use the same file size as the original files, but as something that is divisible by the piece size
+<hydri> ngerakines: the important thing is that the sum of all files obviously have to match the original torrent
+<hydri> the sum of all file sizes
+<hydri> ngerakines: http://www.rasterbar.com/products/libtorrent/manual.html#piece-availability
+<ngerakines> hydri: ah, I think I get it. Where the file size is the portion of the torrent you want local while seeding it with other pieces not mapped to a file marked as 0 priority. Every time that priority map changes, you zero-out the files that are not needed.
+<ngerakines> hydri: thanks
+<hydri> right
+<ngerakines> man, libtorrent is really badass
+<hydri> thanks :P
+<ngerakines> so I'll have to do some calculations as to what the optimal file size is base on the window of pieces that are to be seeded at any given point, but it makes sense
+<ngerakines> I'll also have to be sure to use the sparse file allocations
+<hydri> ngerakines: yeah. actually.. if you're going with keeping pieces in RAM, and picking random pieces to seed.. it might be easier to implement a custom storage_interface which just keeps pieces in memory
+<ngerakines> hydri: yeah, that's what I'm thinking.
+<hydri> ngerakines: I think I have a storage implementation like that laying around actually
+<ngerakines> hydri: I started looking at the storage header ... It's pretty intimidating
+<ngerakines> haha, great
+<hydri> yeah, it's hard to find a good cut-off point.. I wanted to keep all piece re-ordering for compact mode out of it.. (which is becoming less and less relevant as well)
+<hydri> ngerakines: http://codepad.org/Y5a69lOW
+<hydri> ngerakines: I think you get the idea at least
+<hydri> ngerakines: that's pretty old, but I think it still works with libtorrent trunk
+<ngerakines> hydri: I'll drop it in and see how it goes, at the very least it's a start. most of it looks like it makes sense
+<ngerakines> and it works (with a few changes) https://gist.github.com/805476
