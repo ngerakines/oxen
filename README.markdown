@@ -1,5 +1,8 @@
 # About
 
+Oxen is a hybrid torrent client that aims to allow peers with small ammounts
+of disk space the ability to positively impact a peer group.
+
 # USAGE
 
     $ ./oxen --directory /tmp/torrents/
@@ -8,8 +11,8 @@
 
 # GOALS
 
- * Monitor a directory for torrent files
- * Periodically write out stats to a log
+ * Monitor a directory for torrent files @done
+ * Periodically write out stats to a log @done
  * Have a "queue" of torrents which represent queues of torrent chunks.
  * Be able to delete and make unavailable chunks as their ratio is met or the seed-time window closes.
  * Be able to configure start points within a torrent by default. aka, start at the end of a torrent, middle, front, etc

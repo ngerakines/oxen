@@ -16,8 +16,13 @@ class TorrentIndex {
 		TorrentIndex();
 		~TorrentIndex();
 
-		void addTorrent(Torrent *torrent);
 		void addTorrent(boost::filesystem::path file);
+
+		int size() { return (int) torrents_.size(); }
+
+		libtorrent::torrent_info* at(int index) {
+			return torrents_[index];
+		}
 
 	private:
 		std::vector<libtorrent::torrent_info *> torrents_;

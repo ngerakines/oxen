@@ -33,6 +33,9 @@
 
 #include "DirectoryWatcher.hpp"
 #include "Config.hpp"
+#include "TorrentIndex.hpp"
+#include "Core.hpp"
+#include "Status.hpp"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -48,7 +51,7 @@ void sighandler(int signum) {
 	}
 }
 
-int main(int argc, char **argv, char **ppenv) {
+int main(int argc, char **argv, char ** /* **ppenv */) {
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
@@ -68,11 +71,21 @@ int main(int argc, char **argv, char **ppenv) {
 	running = true;
 	signal(SIGINT, sighandler);
 
+	// Create the torrent index manager and queue
 	TorrentIndex ti;
+
+	// Start the core session thread
+	Core core(&config, &ti);
+
+	// Start the status and monitor thread
+	Status status(&config, &core);
+
+	// Start the directory watcher to feed torrents in
 	DirectoryWatcher dw(&config, &ti);
 
+
 	while (running) {
-		boost::this_thread::sleep(boost::posix_time::seconds(5));	
+		boost::this_thread::sleep(boost::posix_time::seconds(5));
 	}
 
 	return 0;

@@ -19,6 +19,7 @@ DirectoryWatcher::DirectoryWatcher(Config *config, TorrentIndex *ti) : config_(c
 
 DirectoryWatcher::~DirectoryWatcher() {
 	running_ = false;
+	cout << "DirectoryWatcher shutting down" << endl;
 	thread_.join();
 }
 

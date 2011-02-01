@@ -8,6 +8,6 @@ find_library(TORRENT NAMES torrent-rasterbar)
 
 add_definitions(-Wall -Wall -Wextra -g -gstabs+)
 
-add_executable(oxen oxen.cpp Config.cpp DirectoryWatcher.cpp TorrentIndex.cpp Torrent.cpp)
+add_executable(oxen oxen.cpp Config.cpp DirectoryWatcher.cpp TorrentIndex.cpp Torrent.cpp Core.cpp Status.cpp)
 TARGET_LINK_LIBRARIES(oxen ${BOOST_SYS} ${BOOST_FS} ${BOOST_THR} ${BOOST_PO} ${TORRENT})
 

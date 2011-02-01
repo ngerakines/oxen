@@ -1,0 +1,34 @@
+<ngerakines> Hi, I'm new to libtorrent and am working on integrating it into a small command line tool. I have a few questions about being able to hook into downloading chunks and selectively removing chunks and marking them as unavailable. Anyone around?
+<hydri> ngerakines: sure
+<ngerakines> hydri: hi
+<hydri> ngerakines: the bittorrent protocol doesn't support advertising losing pieces
+<ngerakines> hydri: at a low level, isn't it just a matter of returning 'no, i don't have that chunk' ?
+<hydri> ngerakines: well.. if there was such a message :P
+<ngerakines> fair enough, allow me to try to explain what I want to do
+<ngerakines> i want to be able to create a peer that downloads N parts of a torrent
+<ngerakines> then as it internally tracks how much of each chunk it's uploaded, once one hits a threshold, delete that chunk internally and download the next chunk of a torrent and provide it to peers
+<ngerakines> sort of a rolling window of data
+<ngerakines> is that doable?
+<hydri> ngerakines: this sounds very close to 'share-mode'.. which is a feature I implemented in trunk.. it doesn't destroy/remove pieces, but it's meant to improve share ratios
+<ngerakines> yeah, i basically want to do something like that, but for nodes that have small amounts of disk, or no disk and rely on a ram-only storage model
+<hydri> is the reason you want a rolling window to save disk space?
+<ngerakines> bingo
+<hydri> well.. the only reliable way I can think of is to disconnect all peers every time you want to remove pieces.. which means you would want to do that with a bunch of pieces at a time
+<ngerakines> once a peer is disconnected, it's up to the peer to try to reconnect though right?
+<hydri> some clients might support sending a second bitfield
+<hydri> you could try to connect back as well, but yeah
+<hydri> you might also be able to silently remove the pieces and respond with 'reject-request', but that's isn't meant to mean "I don't have this piece", it's to fix edge cases when you get choked
+<ngerakines> yeah, i don't know enough about how clients handle the reject-request response
+<hydri> you might be able, to a certain degree, to divert peers to other pieces by sending suggest messages
+<ngerakines> oh interesting
+<hydri> ngerakines: typically the reject message just makes the peer not expect to receive that piece anymore.. but it might very well re-request it
+<ngerakines> there's no reason a peer would re-request a piece that it already got from you, right?
+<hydri> the problem with the suggest message though is that if a peer has all the pieces you have, that won't work
+<hydri> right, as long as it actually has the piece and it passed hash check
+<ngerakines> I think the disconnect model might work then
+<ngerakines> seeder comes up, downloads chunks 1-100, provides all of those to peers that request it, once it hits ratio and there are no outgoing chunks, wipe some portion of it, disconnect all and start over
+<hydri> I would suggest having some overlap
+<ngerakines> yeah
+<hydri> that makes it easier to start up again
+<hydri> ngerakines: are you doing this with a single torrent at a time?
+<ngerakines> if disk/ram is limited, likely yes

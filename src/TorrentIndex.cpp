@@ -26,9 +26,6 @@ TorrentIndex::TorrentIndex() {
 TorrentIndex::~TorrentIndex() {
 }
 
-void TorrentIndex::addTorrent(Torrent *torrent) {
-}
-
 void TorrentIndex::addTorrent(boost::filesystem::path file) {
 	string fileName = file.string();
 
