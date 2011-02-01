@@ -10,6 +10,9 @@
 
 #include <boost/thread.hpp>
 
+#include "MemoryStorage.hpp"
+
+
 using namespace std;
 
 namespace oxen {
@@ -44,10 +47,12 @@ void Core::run() {
 		if (ti_->size() > index) {
 			for (int i = index; i < ti_->size(); i++) {
 				libtorrent::torrent_info *t = ti_->at(i);
+				calculatePiecePriority(t);
 				libtorrent::add_torrent_params parms;
 				parms.save_path = savePath;
 				parms.ti = t;
 				parms.auto_managed = true;
+				parms.storage = libtorrent::temp_storage_constructor;
 				session_->add_torrent(parms);
 			}
 			index = ti_->size();
@@ -60,6 +65,15 @@ void Core::run() {
 libtorrent::session* Core::session() {
 	return session_;
 }
+
+void Core::calculatePiecePriority(libtorrent::torrent_info * /* torrent */) {
+	/* Given the total size of the torrent and number of pieces, determine
+	 * which pieces should be marked as priority 0 (don't download) and
+	 * which should be marked 4 (normal). This should take into account
+	 * the availability of a piece, time that the piece has been seeded
+	 * and some sort of fuzzy ratio approximation. */
+}
+
 
 }
 

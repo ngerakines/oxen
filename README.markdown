@@ -15,7 +15,9 @@ of disk space the ability to positively impact a peer group.
  * Periodically write out stats to a log @done
  * Have a "queue" of torrents which represent queues of torrent chunks.
  * Be able to delete and make unavailable chunks as their ratio is met or the seed-time window closes.
+   - To be implemented as part of the temp_storage class.
  * Be able to configure start points within a torrent by default. aka, start at the end of a torrent, middle, front, etc
+   - This can be done using the piece_priorty(...) method.
 
 # License
 

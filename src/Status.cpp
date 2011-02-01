@@ -21,6 +21,11 @@ Status::~Status() {
 	thread_.join();
 }
 
+/* This thread should also check for the availability of the seeded pieces and
+ * the time in which pieces have been seeded. Once a piece has been seeded long
+ * enough and it's availability is good, it should initiate an update sequence
+ * that moves the piece window forward, removing pieces and disconnecting all
+ * connected peers. */
 void Status::run() {
 	cout << "Status thread starting." << endl;
 	boost::this_thread::sleep(boost::posix_time::seconds(5));

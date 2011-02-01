@@ -56,7 +56,7 @@ void TorrentIndex::addTorrent(boost::filesystem::path file) {
 		}
 	}
 
-	cout << "Adding torrent " << t->info_hash() << "(" << t->num_pieces() << " pieces at " << t->piece_length() << " KiB)" << endl;
+	cout << "Adding torrent " << t->info_hash() << " (" << t->num_pieces() << " pieces at " << t->piece_length() << " KiB)" << endl;
 
 	torrents_.push_back(t);
 	boost::filesystem::remove(file);

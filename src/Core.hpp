@@ -24,9 +24,10 @@ class Core {
 		volatile bool running_;
 		boost::thread thread_;
 
-		void run();
-
 		libtorrent::session *session_;
+
+		void run();
+		void calculatePiecePriority(libtorrent::torrent_info *torrent);
 };
 
 }
