@@ -3,6 +3,15 @@
 Oxen is a hybrid torrent client that aims to allow peers with small ammounts
 of disk space the ability to positively impact a peer group.
 
+# Status
+
+So far you can ...
+
+ * Start the application and monitor a directory for new torrents.
+ * Add new torrents to the system
+ * Set a max memory usage value (defaulting to 64 megs)
+ * Download up to that max and seed any pieces known
+
 # USAGE
 
     $ ./oxen --directory /tmp/torrents/

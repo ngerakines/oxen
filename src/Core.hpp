@@ -27,7 +27,7 @@ class Core {
 		libtorrent::session *session_;
 
 		void run();
-		void calculatePiecePriority(libtorrent::torrent_info *torrent);
+		void calculatePiecePriority(libtorrent::torrent_info *torrent, libtorrent::torrent_handle handle);
 };
 
 }

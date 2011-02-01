@@ -7,7 +7,7 @@ namespace oxen {
 
 class Config {
 	public:
-		Config() : directory_("/tmp") { }
+		Config() : directory_("/tmp"), maxMemory_(64) { }
 		~Config() { }
 
 		void directory(std::string directory) {
@@ -16,9 +16,11 @@ class Config {
 		std::string directory() {
 			return directory_;
 		}
+		int maxMemory() { return maxMemory_; }
 
 	private:
 		std::string directory_;
+		int maxMemory_;
 };
 
 }

@@ -47,13 +47,15 @@ void Core::run() {
 		if (ti_->size() > index) {
 			for (int i = index; i < ti_->size(); i++) {
 				libtorrent::torrent_info *t = ti_->at(i);
-				calculatePiecePriority(t);
+#if 1
 				libtorrent::add_torrent_params parms;
 				parms.save_path = savePath;
 				parms.ti = t;
 				parms.auto_managed = true;
 				parms.storage = libtorrent::temp_storage_constructor;
-				session_->add_torrent(parms);
+				libtorrent::torrent_handle handle = session_->add_torrent(parms);
+				calculatePiecePriority(t, handle);
+#endif
 			}
 			index = ti_->size();
 		}
@@ -66,12 +68,30 @@ libtorrent::session* Core::session() {
 	return session_;
 }
 
-void Core::calculatePiecePriority(libtorrent::torrent_info * /* torrent */) {
+void Core::calculatePiecePriority(libtorrent::torrent_info *torrent, libtorrent::torrent_handle handle) {
 	/* Given the total size of the torrent and number of pieces, determine
 	 * which pieces should be marked as priority 0 (don't download) and
 	 * which should be marked 4 (normal). This should take into account
 	 * the availability of a piece, time that the piece has been seeded
 	 * and some sort of fuzzy ratio approximation. */
+	cout << "torrent has " << torrent->num_pieces() << " pieces." << endl;
+	cout << "each piece is " << torrent->piece_length() << " long." << endl;
+	cout << "total size is " << torrent->total_size() << " long." << endl;
+
+	int maxMem = config_->maxMemory() * 1048576;
+	cout << "given that maxMemory is " << config_->maxMemory() << " megs (" << maxMem << ") ..." << endl;
+	if (maxMem > torrent->total_size()) {
+		cout << "we can seed all pieces at once." << endl;
+	} else {
+		cout << "we can seed " << (maxMem / torrent->piece_length()) << " pieces at once." << endl; 
+		int pieceCount = (maxMem / torrent->piece_length());
+		for (int i = 0; i < pieceCount; i++) {
+			handle.piece_priority(i, 7);
+		}
+		for (int i = pieceCount; i < torrent->num_pieces(); i++) {
+			handle.piece_priority(i, 0);
+		}
+	}
 }
 
 
