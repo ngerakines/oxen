@@ -37,31 +37,47 @@ void Core::run() {
 	// session_->set_download_rate_limit(512*1024);
 
 	// TODO: Determine a random port range to listen to
-	session_->listen_on(std::make_pair(61000, 61500));
+	// session_->listen_on(std::make_pair(61000, 61500));
+	session_->start_upnp();
 
 	int index = 0;
-	boost::filesystem::path savePath("/tmp/");
+	// boost::filesystem::path savePath("/tmp/");
+
+	libtorrent::torrent_info *currentTorrent = NULL;
 
 	while (running_) {
-
-		if (ti_->size() > index) {
-			for (int i = index; i < ti_->size(); i++) {
-				libtorrent::torrent_info *t = ti_->at(i);
-#if 1
-				libtorrent::add_torrent_params parms;
-				parms.save_path = savePath;
-				parms.ti = t;
-				parms.auto_managed = true;
-				parms.storage = libtorrent::temp_storage_constructor;
-				libtorrent::torrent_handle handle = session_->add_torrent(parms);
-				calculatePiecePriority(t, handle);
-#endif
+		if (currentTorrent != NULL) {
+			bool keepGoing = true;
+			if (config_->getMode() == 0) { // ratio
+				libtorrent::session_status sstatus = session_->status();
+				if (sstatus.total_download > 0) {
+					double ratio = (double) sstatus.total_upload / (double) sstatus.total_download;
+					cout.precision(4);
+					if (ratio > config_->getRatio()) {
+						keepGoing = false;
+					}
+				}
+			} else { // time
 			}
-			index = ti_->size();
+			if (!keepGoing) {
+				libtorrent::torrent_handle handle = session_->find_torrent(currentTorrent->info_hash());
+				session_->remove_torrent(handle);
+				currentTorrent = NULL;
+			}
+		}
+		if (!currentTorrent && !ti_->empty()) {
+			currentTorrent = ti_->next();
+			libtorrent::add_torrent_params parms;
+			parms.ti = currentTorrent;
+			parms.auto_managed = true;
+			parms.storage = libtorrent::temp_storage_constructor;
+			libtorrent::torrent_handle handle = session_->add_torrent(parms);
+			calculatePiecePriority(currentTorrent, handle);
 		}
 
-		boost::this_thread::sleep(boost::posix_time::seconds(10));
+		boost::this_thread::sleep(boost::posix_time::seconds(30));
 	}
+	session_->stop_upnp();
 }
 
 libtorrent::session* Core::session() {

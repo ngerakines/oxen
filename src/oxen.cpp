@@ -56,6 +56,9 @@ int main(int argc, char **argv, char ** /* **ppenv */) {
 	desc.add_options()
 		("help", "produce help message")
 		("directory", po::value<string>(), "The directory to check for new torrents in")
+		("ratio", po::value<double>(), "Target ratio")
+		("hours", po::value<int>(), "Time window")
+		("memory", po::value<int>(), "Memory in megs")
 	;
 
 	po::variables_map vm;
@@ -66,6 +69,16 @@ int main(int argc, char **argv, char ** /* **ppenv */) {
 
 	if (vm.count("directory")) {
 		config.directory(vm["directory"].as<string>());
+	}
+	if (vm.count("memory")) {
+		config.setMaxMemory(vm["memory"].as<int>());
+	}
+	if (vm.count("ratio")) {
+		config.setRatio(vm["ratio"].as<double>());
+	}
+	if (vm.count("hours")) {
+		config.setMode(1);
+		config.setHours(vm["hours"].as<int>());
 	}
 
 	running = true;

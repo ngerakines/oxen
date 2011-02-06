@@ -13,6 +13,7 @@
 #include "libtorrent/lazy_entry.hpp"
 #include "libtorrent/torrent_info.hpp"
 #include <boost/filesystem/operations.hpp>
+#include <boost/thread/mutex.hpp>
 
 using namespace std;
 using namespace libtorrent;
@@ -27,6 +28,7 @@ TorrentIndex::~TorrentIndex() {
 }
 
 void TorrentIndex::addTorrent(boost::filesystem::path file) {
+	boost::mutex::scoped_lock lock(mutex_);
 	string fileName = file.string();
 
 	int size = file_size(fileName.c_str());
@@ -58,7 +60,7 @@ void TorrentIndex::addTorrent(boost::filesystem::path file) {
 
 	cout << "Adding torrent " << t->info_hash() << " (" << t->num_pieces() << " pieces at " << t->piece_length() << " KiB)" << endl;
 
-	torrents_.push_back(t);
+	torrents_.insert(torrents_.begin(), t);
 	boost::filesystem::remove(file);
 }
 

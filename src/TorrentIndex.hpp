@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/thread/mutex.hpp>
 #include "libtorrent/torrent_info.hpp"
 
 #include "Torrent.hpp"
@@ -18,14 +19,26 @@ class TorrentIndex {
 
 		void addTorrent(boost::filesystem::path file);
 
-		int size() { return (int) torrents_.size(); }
+		bool empty() {
+			boost::mutex::scoped_lock lock(mutex_);
+			return torrents_.empty();
+		}
 
-		libtorrent::torrent_info* at(int index) {
-			return torrents_[index];
+		int size() {
+			boost::mutex::scoped_lock lock(mutex_);
+			return (int) torrents_.size();
+		}
+
+		libtorrent::torrent_info* next() {
+			boost::mutex::scoped_lock lock(mutex_);
+			libtorrent::torrent_info *n = torrents_.back();
+			torrents_.pop_back();
+			return n;
 		}
 
 	private:
 		std::vector<libtorrent::torrent_info *> torrents_;
+		mutable boost::mutex mutex_;
 };
 
 }

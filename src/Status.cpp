@@ -2,6 +2,8 @@
 #include "Status.hpp"
 
 #include <iostream>
+#include <typeinfo>
+
 #include <boost/thread.hpp>
 #include "libtorrent/session.hpp"
 
@@ -34,8 +36,13 @@ void Status::run() {
 
 	while (running_) {
 		libtorrent::session_status sstatus = s->status();
-		cout << "Download Rate " << round(sstatus.download_rate/1024, 2) << " kb/s (" << sstatus.total_download/1048576 << " mb)";
-		cout << " | Upload Rate " << round(sstatus.upload_rate/1024, 2) <<  " kb/s (" << sstatus.total_upload/1048576 << " mb)";
+		cout << "Download Rate " << round(sstatus.download_rate/1024, 2) << " kb/s (" << sstatus.total_download << ", " << sstatus.total_download/1048576 << " mb)";
+		cout << " | Upload Rate " << round(sstatus.upload_rate/1024, 2) <<  " kb/s (" << sstatus.total_upload << ", " << sstatus.total_upload/1048576 << " mb)";
+		if (sstatus.total_download > 0) {
+			double ratio = (double) sstatus.total_upload / (double) sstatus.total_download;
+			cout.precision(4);
+			cout << " | Ratio " << ratio;
+		}
 		cout << " | " << sstatus.num_peers << " peer";
 		if (sstatus.num_peers != 1) {
 			cout << "s";
