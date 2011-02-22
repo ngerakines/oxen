@@ -37,6 +37,8 @@
 #include "Core.hpp"
 #include "Status.hpp"
 
+#include "Utils.h"
+
 using namespace std;
 namespace po = boost::program_options;
 
@@ -98,7 +100,7 @@ int main(int argc, char **argv, char ** /* **ppenv */) {
 
 
 	while (running) {
-		boost::this_thread::sleep(boost::posix_time::seconds(5));
+		SLEEP(5);
 	}
 
 	return 0;

@@ -15,17 +15,17 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include "Utils.h"
+
 using namespace std;
 using namespace libtorrent;
 using namespace boost::filesystem;
 
 namespace oxen {
 
-TorrentIndex::TorrentIndex() {
-}
+TorrentIndex::TorrentIndex() { }
 
-TorrentIndex::~TorrentIndex() {
-}
+TorrentIndex::~TorrentIndex() { }
 
 void TorrentIndex::addTorrent(boost::filesystem::path file) {
 	boost::mutex::scoped_lock lock(mutex_);
@@ -33,7 +33,7 @@ void TorrentIndex::addTorrent(boost::filesystem::path file) {
 
 	int size = file_size(fileName.c_str());
 	if (size > 10 * 1000000) {
-		std::cerr << "file too big (" << size << "), aborting\n";
+		LOG_ERROR("file too big (" << size << "), aborting" << endl);
 		boost::filesystem::remove(file);
 		return;
 	}
@@ -42,7 +42,7 @@ void TorrentIndex::addTorrent(boost::filesystem::path file) {
 	lazy_entry e;
 	int ret = lazy_bdecode(&buf[0], &buf[0] + buf.size(), e);
 	if (ret != 0) {
-		std::cerr << "Invalid bencoding in torrent " << fileName << std::endl;
+		LOG_ERROR("Invalid bencoding in torrent " << fileName << endl);
 		boost::filesystem::remove(file);
 		return;
 	}
@@ -52,13 +52,14 @@ void TorrentIndex::addTorrent(boost::filesystem::path file) {
 	for (int i = 0; i < (int) torrents_.size(); i++) {
 		torrent_info *currentTorrent = torrents_[i];
 		if (currentTorrent->info_hash() == t->info_hash()) {
-			std::cerr << "Ignoring known torrent " << fileName << " (" << t->info_hash() << ")" << endl;
+			LOG_ERROR("Ignoring known torrent " << fileName << " (" << t->info_hash() << ")" << endl);
 			boost::filesystem::remove(file);
 			return;
 		}
 	}
 
-	cout << "Adding torrent " << t->info_hash() << " (" << t->num_pieces() << " pieces at " << t->piece_length() << " KiB)" << endl;
+	// TODO: use real log facility (ie syslog) instead of std out.
+	LOG_INFO("Adding torrent " << t->info_hash() << " (" << t->num_pieces() << " pieces at " << t->piece_length() << " KiB)" << endl);
 
 	torrents_.insert(torrents_.begin(), t);
 	boost::filesystem::remove(file);

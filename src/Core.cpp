@@ -5,12 +5,15 @@
 #include "Config.hpp"
 
 #include <iostream>
+#include <sstream>
 
 #include "libtorrent/session.hpp"
 
 #include <boost/thread.hpp>
 
 #include "MemoryStorage.hpp"
+
+#include "Utils.h"
 
 
 using namespace std;
@@ -22,12 +25,12 @@ Core::Core(Config *config, TorrentIndex *ti) : config_(config), ti_(ti), running
 
 Core::~Core() {
 	running_ = false;
-	cout << "Core shutting down" << endl;
+	LOG_INFO("Core shutting down." << endl);
 	thread_.join();
 }
 
 void Core::run() {
-	cout << "Core starting up, creating session: OX 0.1.0.0" << endl;
+	LOG_INFO("Core starting up." << endl);
 	session_ = new libtorrent::session(libtorrent::fingerprint("OX", 0, 1, 0, 0));
 
 	// TODO: Set max upload rate
@@ -40,15 +43,12 @@ void Core::run() {
 	// session_->listen_on(std::make_pair(61000, 61500));
 	session_->start_upnp();
 
-	int index = 0;
-	// boost::filesystem::path savePath("/tmp/");
-
 	libtorrent::torrent_info *currentTorrent = NULL;
 
 	while (running_) {
 		if (currentTorrent != NULL) {
 			bool keepGoing = true;
-			if (config_->getMode() == 0) { // ratio
+			if (config_->getMode() == 0) {
 				libtorrent::session_status sstatus = session_->status();
 				if (sstatus.total_download > 0) {
 					double ratio = (double) sstatus.total_upload / (double) sstatus.total_download;
@@ -57,7 +57,8 @@ void Core::run() {
 						keepGoing = false;
 					}
 				}
-			} else { // time
+			} else {
+				// TODO: Implement time based checking.
 			}
 			if (!keepGoing) {
 				libtorrent::torrent_handle handle = session_->find_torrent(currentTorrent->info_hash());
@@ -75,7 +76,7 @@ void Core::run() {
 			calculatePiecePriority(currentTorrent, handle);
 		}
 
-		boost::this_thread::sleep(boost::posix_time::seconds(30));
+		SLEEP(30);
 	}
 	session_->stop_upnp();
 }
@@ -90,17 +91,13 @@ void Core::calculatePiecePriority(libtorrent::torrent_info *torrent, libtorrent:
 	 * which should be marked 4 (normal). This should take into account
 	 * the availability of a piece, time that the piece has been seeded
 	 * and some sort of fuzzy ratio approximation. */
-	cout << "torrent has " << torrent->num_pieces() << " pieces." << endl;
-	cout << "each piece is " << torrent->piece_length() << " long." << endl;
-	cout << "total size is " << torrent->total_size() << " long." << endl;
-
+	stringstream ss;
 	int maxMem = config_->maxMemory() * 1048576;
-	cout << "given that maxMemory is " << config_->maxMemory() << " megs (" << maxMem << ") ..." << endl;
 	if (maxMem > torrent->total_size()) {
-		cout << "we can seed all pieces at once." << endl;
+		ss << "The entire torrent can be seeded.";
 	} else {
-		cout << "we can seed " << (maxMem / torrent->piece_length()) << " pieces at once." << endl; 
 		int pieceCount = (maxMem / torrent->piece_length());
+		ss << pieceCount << " (" << torrent->piece_length() << ") of " << torrent->num_pieces() << " (" << torrent->total_size() << ") can be seeded.";
 		for (int i = 0; i < pieceCount; i++) {
 			handle.piece_priority(i, 7);
 		}
@@ -108,6 +105,7 @@ void Core::calculatePiecePriority(libtorrent::torrent_info *torrent, libtorrent:
 			handle.piece_priority(i, 0);
 		}
 	}
+	LOG_INFO(ss.str() << endl);
 }
 
 

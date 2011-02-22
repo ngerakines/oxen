@@ -9,24 +9,27 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <iostream>
+
+#include "Utils.h"
+
 using namespace std;
 
 namespace oxen {
 
 DirectoryWatcher::DirectoryWatcher(Config *config, TorrentIndex *ti) : config_(config), ti_(ti), running_(true), thread_(boost::thread(boost::bind(&DirectoryWatcher::run, this))) {
-	cout << "DirectoryWatcher checking for new torrents in " << config->directory() << endl;
+	LOG_INFO("DirectoryWatcher checking for new torrents in " << config->directory() << endl);
 }
 
 DirectoryWatcher::~DirectoryWatcher() {
 	running_ = false;
-	cout << "DirectoryWatcher shutting down" << endl;
+	LOG_INFO("DirectoryWatcher shutting down" << endl);
 	thread_.join();
 }
 
 void DirectoryWatcher::run() {
 	while (running_) {
 		check();
-		boost::this_thread::sleep(boost::posix_time::seconds(10));
+		SLEEP(10);
 	}
 }
 
